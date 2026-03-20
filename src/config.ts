@@ -75,12 +75,12 @@ function loadConfig(): Config {
   const config: Config = {
     nodeEnv: (process.env.NODE_ENV as 'development' | 'production') || 'development',
     logLevel: (process.env.LOG_LEVEL as 'debug' | 'info' | 'warn' | 'error') || 'info',
-    port: process.env.PORT ? parseInt(process.env.PORT, 10) : 3001,
+    port: process.env.PORT ? parseInt(process.env.PORT, 10) : 3333,
 
     // Prioritize environment variables from Claude Desktop if available
     clioClientId: process.env.CLIO_CLIENT_ID || undefined,
     clioClientSecret: process.env.CLIO_CLIENT_SECRET || undefined,
-    clioRedirectUri: process.env.CLIO_REDIRECT_URI || 'http://127.0.0.1:3001/clio/auth/callback',
+    clioRedirectUri: process.env.CLIO_REDIRECT_URI || 'http://127.0.0.1:3333/clio/auth/callback',
     clioApiRegion: (process.env.CLIO_API_REGION as 'us' | 'eu' | 'ca' | 'au') || 'us',
 
     // Default LanceDB path is now in the .legalcontext directory in user's home directory
