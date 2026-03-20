@@ -40,7 +40,7 @@ import { getLegalContextFilePath } from '../utils/paths';
 // File path for storing query counter data in the .legalcontext directory
 const QUERY_COUNTER_FILE = getLegalContextFilePath('query_counter.json');
 
-// Daily query counter for free tier limitation
+// Daily query counter
 let queryCount = 0;
 let queryDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
 
@@ -203,7 +203,7 @@ export function registerRagQueryTool(server: McpServer): void {
     async ({ query, limit = 5, documentType, jurisdiction, citationFormat = 'bluebook' }) => { // Handler function receiving validated arguments
       logger.info(`Received RAG query: ${query} with limit ${limit}${documentType ? `, document type: ${documentType}` : ''}${jurisdiction ? `, jurisdiction: ${jurisdiction}` : ''}`);
 
-      // Check and update daily query count for free tier limitation
+      // Check and update daily query count
       const today = new Date().toISOString().split('T')[0];
       if (today !== queryDate) {
         // Reset counter for new day
@@ -215,13 +215,13 @@ export function registerRagQueryTool(server: McpServer): void {
         await saveQueryCounter();
       }
 
-      // Check if we've exceeded the daily query limit
-      if (queryCount >= config.maxQueriesPerDay) {
+      // Check if we've exceeded the daily query limit (0 = unlimited)
+      if (config.maxQueriesPerDay > 0 && queryCount >= config.maxQueriesPerDay) {
         logger.warn(`Daily query limit (${config.maxQueriesPerDay}) exceeded`);
         return {
           content: [{
             type: 'text',
-            text: `You have reached the daily limit of ${config.maxQueriesPerDay} queries for the free tier. Please try again tomorrow or upgrade to the premium version.`,
+            text: `You have reached the daily limit of ${config.maxQueriesPerDay} queries. Please try again tomorrow.`,
           }],
           isError: true,
         };

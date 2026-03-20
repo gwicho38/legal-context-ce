@@ -12,7 +12,7 @@
  *
  * This module implements a batch indexing workflow for Clio documents.
  * It retrieves documents from Clio, processes them, and indexes them in LanceDB.
- * The process is limited to the first 100 documents to respect free tier limitations.
+ * The process retrieves and indexes documents from Clio into LanceDB.
  */
 
 import { logger } from '../logger';
@@ -25,8 +25,8 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { getLegalContextFilePath } from '../utils/paths';
 
-// Maximum number of documents to process in a batch
-export const MAX_DOCUMENTS = 100;
+// Maximum number of documents to process in a batch (0 = unlimited)
+export const MAX_DOCUMENTS = config.maxDocuments;
 
 // Path to store the list of indexed documents in the .legalcontext directory
 const INDEXED_DOCS_PATH = getLegalContextFilePath('indexed_documents.json');
@@ -144,9 +144,10 @@ export async function batchIndexDocuments(): Promise<BatchIndexingResult> {
     const indexedDocIds = await loadIndexedDocumentIds();
     logger.info(`Loaded ${indexedDocIds.size} previously indexed document IDs`);
 
-    // Retrieve documents from Clio
-    logger.info(`Retrieving documents from Clio (limit: ${MAX_DOCUMENTS})`);
-    const documentsResponse = await clioApiClient.listDocuments(1, MAX_DOCUMENTS);
+    // Retrieve documents from Clio (0 = fetch all available)
+    const fetchLimit = MAX_DOCUMENTS > 0 ? MAX_DOCUMENTS : 10000;
+    logger.info(`Retrieving documents from Clio (limit: ${MAX_DOCUMENTS > 0 ? MAX_DOCUMENTS : 'unlimited'})`);
+    const documentsResponse = await clioApiClient.listDocuments(1, fetchLimit);
 
     // Filter out documents that are not processable
     const allDocuments = documentsResponse.data || [];
@@ -205,8 +206,8 @@ export async function batchIndexDocuments(): Promise<BatchIndexingResult> {
         logger.error(`Error processing document ${document.id}: ${docError}`);
       }
 
-      // Enforce document limits for free tier
-      if (result.processedDocuments >= MAX_DOCUMENTS) {
+      // Enforce document limits if configured (0 = unlimited)
+      if (MAX_DOCUMENTS > 0 && result.processedDocuments >= MAX_DOCUMENTS) {
         logger.info(`Reached maximum document limit (${MAX_DOCUMENTS}). Stopping batch process.`);
         break;
       }
@@ -263,9 +264,10 @@ export async function checkForNewDocuments(): Promise<{ hasNew: boolean, newCoun
     // Convert to strings to ensure consistent comparison
     const indexedIdsAsStrings = new Set(Array.from(indexedDocIds).map(String));
 
-    // Retrieve documents from Clio
+    // Retrieve documents from Clio (0 = fetch all available)
+    const checkLimit = MAX_DOCUMENTS > 0 ? MAX_DOCUMENTS : 10000;
     logger.info(`Checking for new documents in Clio`);
-    const documentsResponse = await clioApiClient.listDocuments(1, MAX_DOCUMENTS);
+    const documentsResponse = await clioApiClient.listDocuments(1, checkLimit);
 
     // Log total documents for debugging
     logger.info(`Retrieved ${documentsResponse.data.length} documents from Clio (total: ${documentsResponse.meta.paging.total_entries})`);

@@ -34,7 +34,7 @@ import { getLegalContextFilePath } from "../utils/paths";
 // File path for storing query counter data in the .legalcontext directory
 const QUERY_COUNTER_FILE = getLegalContextFilePath("query_counter.json");
 
-// Daily query counter for free tier limitation
+// Daily query counter
 let queryCount = 0;
 let queryDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
 
@@ -105,7 +105,7 @@ export function registerLegalQueryTool(server: McpServer): void {
     async ({ query }) => { // Handler function receiving validated arguments
       logger.info(`Received legal query: ${query}`);
 
-      // Check and update daily query count for free tier limitation
+      // Check and update daily query count
       const today = new Date().toISOString().split('T')[0];
       if (today !== queryDate) {
         // Reset counter for new day
@@ -114,13 +114,13 @@ export function registerLegalQueryTool(server: McpServer): void {
         logger.debug("Reset daily query counter for new day");
       }
 
-      // Check if we've exceeded the daily query limit
-      if (queryCount >= config.maxQueriesPerDay) {
+      // Check if we've exceeded the daily query limit (0 = unlimited)
+      if (config.maxQueriesPerDay > 0 && queryCount >= config.maxQueriesPerDay) {
         logger.warn(`Daily query limit (${config.maxQueriesPerDay}) exceeded`);
         return {
           content: [{
             type: "text",
-            text: `You have reached the daily limit of ${config.maxQueriesPerDay} queries for the free tier. Please try again tomorrow or upgrade to the premium version.`
+            text: `You have reached the daily limit of ${config.maxQueriesPerDay} queries. Please try again tomorrow.`
           }],
           isError: true,
         };
@@ -282,7 +282,7 @@ SOURCE: legal://documents/employment-contracts/template
         prompt += `
 This is a document summarization request. In a full implementation, LegalContext would retrieve the relevant document from the Clio document management system and provide it as context here. For now, this is a placeholder response.
 
-Please note that the free tier is limited to ${config.maxQueriesPerDay} queries per day and ${config.maxDocuments} indexed documents. Current query count: ${queryCount}/${config.maxQueriesPerDay}.
+
 `;
       }
       break;
@@ -316,8 +316,6 @@ SOURCE: legal://case-law/intellectual-property
       } else {
         prompt += `
 This is a legal research request. In a full implementation, LegalContext would search through your firm's case database and precedent library to provide relevant cases and legal analyses as context here. For now, this is a placeholder response.
-
-Please note that the free tier is limited to ${config.maxQueriesPerDay} queries per day. Current query count: ${queryCount}/${config.maxQueriesPerDay}.
 `;
       }
       break;
@@ -350,8 +348,6 @@ SOURCE: legal://documents/merger-acquisitions
       } else {
         prompt += `
 This is a document search request. In a full implementation, LegalContext would search through your Clio document management system to find relevant documents matching these criteria. For now, this is a placeholder response.
-
-Please note that the free tier is limited to ${config.maxQueriesPerDay} queries per day and ${config.maxDocuments} indexed documents. Current query count: ${queryCount}/${config.maxQueriesPerDay}.
 `;
       }
       break;
@@ -392,8 +388,6 @@ SOURCE: legal://documents/client-contracts/johnson
       } else {
         prompt += `
 This is a contract analysis request. In a full implementation, LegalContext would retrieve the specific contract from your Clio document management system and analyze its clauses, terms, and potential risks. For now, this is a placeholder response.
-
-Please note that the free tier is limited to ${config.maxQueriesPerDay} queries per day. Current query count: ${queryCount}/${config.maxQueriesPerDay}.
 `;
       }
       break;
@@ -430,8 +424,6 @@ SOURCE: legal://documents/client-documentation
       } else {
         prompt += `
 This is a legal advice preparation request. In a full implementation, LegalContext would search through your case history, document templates, and legal research to help prepare advice for this specific situation. For now, this is a placeholder response.
-
-Please note that the free tier is limited to ${config.maxQueriesPerDay} queries per day. Current query count: ${queryCount}/${config.maxQueriesPerDay}.
 `;
       }
       break;
@@ -440,8 +432,6 @@ Please note that the free tier is limited to ${config.maxQueriesPerDay} queries 
     default:
       prompt += `
 The query type could not be specifically categorized. In a full implementation, LegalContext would perform a general search across all document categories and legal resources. For now, this is a placeholder response.
-
-Please note that the free tier is limited to ${config.maxQueriesPerDay} queries per day. Current query count: ${queryCount}/${config.maxQueriesPerDay}.
 `;
       break;
   }

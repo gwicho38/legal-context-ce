@@ -44,7 +44,7 @@ export interface Config {
   // Security
   secretKey?: string;
 
-  // Free tier limitations
+  // Document and query limits (0 = unlimited)
   maxDocuments: number;
   maxQueriesPerDay: number;
 
@@ -88,8 +88,8 @@ function loadConfig(): Config {
 
     secretKey: process.env.SECRET_KEY,
 
-    maxDocuments: process.env.MAX_DOCUMENTS ? parseInt(process.env.MAX_DOCUMENTS, 10) : 100,
-    maxQueriesPerDay: process.env.MAX_QUERIES_PER_DAY ? parseInt(process.env.MAX_QUERIES_PER_DAY, 10) : 50,
+    maxDocuments: process.env.MAX_DOCUMENTS ? parseInt(process.env.MAX_DOCUMENTS, 10) : 0,
+    maxQueriesPerDay: process.env.MAX_QUERIES_PER_DAY ? parseInt(process.env.MAX_QUERIES_PER_DAY, 10) : 0,
 
     // Increased chunk size for legal documents to better maintain context
     chunkSize: process.env.CHUNK_SIZE ? parseInt(process.env.CHUNK_SIZE, 10) : 1500,

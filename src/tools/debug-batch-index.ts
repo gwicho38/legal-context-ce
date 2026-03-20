@@ -46,8 +46,7 @@ async function debugBatchIndex() {
 
     // Retrieve documents from Clio
     logger.info('Retrieving documents from Clio');
-    const MAX_DOCUMENTS = 100; // Free tier limit
-    const documentsResponse = await clioApiClient.listDocuments(1, MAX_DOCUMENTS);
+    const documentsResponse = await clioApiClient.listDocuments(1, 10000);
 
     // Log all document details
     logger.info(`Retrieved ${documentsResponse.data.length} documents from Clio`);
@@ -115,11 +114,7 @@ async function debugBatchIndex() {
         logger.error(`Error with document ${doc.id}:`, error);
       }
 
-      // Limit to free tier maximum
-      if (successful + failed >= MAX_DOCUMENTS) {
-        logger.info(`Reached maximum document limit (${MAX_DOCUMENTS}). Stopping process.`);
-        break;
-      }
+      // No document limit in fork
     }
 
     // Update the indexed documents file with successfully indexed documents
